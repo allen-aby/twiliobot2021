@@ -66,13 +66,14 @@ module.exports = class ShwarmaOrder extends Order{
                     aReturn.push("Invalid Option");
                     aReturn.push("1. Shawarma\n2. Pizza\n3. Chicking Wings\nPlease enter the number:\n");
                     this.stateCur = OrderState.SELECT;
-                    this.Total = 0;
+                    this.Total = 1;
                 }
                 this.stateCur = OrderState.SIZE;
                 aReturn.push("What size would you like?");
                 aReturn.push("1. Large\n2. Medium\n3. Small\nPlease enter the number:\n");
                 break;
             case OrderState.SIZE:
+                this.stateCur = OrderState.TOPPINGS
                 if (sInput=="1")
                 {
                     this.sSize = "Large";
@@ -90,9 +91,12 @@ module.exports = class ShwarmaOrder extends Order{
                 }
                 else{
                     aReturn.push("Invalid Option");
-                    this.Total = 0;
+                    this.Total = 1;
+                    this.stateCur = OrderState.SIZE;
+                    aReturn.push("What size would you like?");
+                    aReturn.push("1. Large\n2. Medium\n3. Small\nPlease enter the number:\n"); 
                 }
-                this.stateCur = OrderState.TOPPINGS
+                
                 aReturn.push("What toppings would you like?\n (Tomatoes,Mushrooms,Jalapenos,Feta Cheese,Bacon,Chicken,Ground Beef,Sausage)");
                 break;
             case OrderState.TOPPINGS:
@@ -103,6 +107,7 @@ module.exports = class ShwarmaOrder extends Order{
             case OrderState.DRINKS:
                 if(sInput.toLowerCase() != "no"){
                     this.sDrinks = sInput;
+                    this.nOrder = 15;
                     this.Total+=2;
                 }
                 this.stateCur = OrderState.ANYTHING;
@@ -117,26 +122,29 @@ module.exports = class ShwarmaOrder extends Order{
                 }
                 var myOrder = "";
                 aReturn.push(`Thank-you for your order of: \n1. ${this.sSize} ${this.sItem} with ${this.sToppings}`);
-                myOrder+=`1.${this.sSize} ${this.sItem} with ${this.sToppings}`;
+                myOrder+=`${this.sSize} ${this.sItem} with ${this.sToppings}`;
                 if(this.sDrinks){
                     aReturn.push("2. Soda: "+this.sDrinks);
-                    myOrder+="\n2. Soda: "+this.sDrinks;
+                    myOrder+="\nSoda: "+this.sDrinks;
                 }
                 if(this.sAnythingElse){
-                    myOrder+="\n3. Extra Items: "+this.sDrinks;
+                    myOrder+="\n Extra Items: "+this.sDrinks;
                     aReturn.push("3. "+this.sAnythingElse);
                 }
-                OrderList.push(myOrder); 
+                OrderList.push(myOrder);
+                this.sItem=myOrder; 
                 aReturn.push("Your total amount is $"+this.Total);
                 aReturn.push(`Please pay for your order here`);
                 aReturn.push(`${this.sUrl}/payment/${this.sNumber}/`);
                 break;
             case OrderState.PAYMENT:
                 console.log(sInput);
-                this.isDone(true);
                 let d = new Date();
                 d.setMinutes(d.getMinutes() + 20);
+                aReturn.push(`Payment Successful`);
+                aReturn.push(`Delivery Address: ${sInput}`);
                 aReturn.push(`Your order will be delivered at ${d.toTimeString()}`);
+                this.isDone(true);
                 break;
         }
         return aReturn;
@@ -149,7 +157,7 @@ module.exports = class ShwarmaOrder extends Order{
       if(sAmount != "-1"){
         this.nOrder = sAmount;
       }
-      const sClientID = process.env.SB_CLIENT_ID || 'put your client id here for testing ... Make sure that you delete it before committing'
+      const sClientID = process.env.SB_CLIENT_ID || "AZ1SJ6jVCmBBcAwYZjQCHh7ETDYLWPjxxL0J9KcdCQztiRV4tefri6eDsiLlgHUg9iBROrm2uXE7J-ll";
       return(`
       <!DOCTYPE html>
   
@@ -163,7 +171,7 @@ module.exports = class ShwarmaOrder extends Order{
         <script
           src="https://www.paypal.com/sdk/js?client-id=${sClientID}"> // Required. Replace SB_CLIENT_ID with your sandbox client ID.
         </script>
-        Thank you ${this.sNumber} for your ${this.sItem} order of $${this.nOrder}.
+        Thank you ${this.sNumber} for your order of ${this.sItem}. Your total amount is $${this.Total}.
         <div id="paypal-button-container"></div>
   
         <script>

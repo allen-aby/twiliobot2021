@@ -4,7 +4,6 @@ const app = express();
 const server = require('http').createServer(app);
 const io = require('socket.io')(server);
 const _ = require('underscore');
-
 const port = process.env.PORT || parseInt(process.argv.pop()) || 3002;
 
 server.listen(port, function () {
@@ -12,7 +11,6 @@ server.listen(port, function () {
 });
 
 const ShwarmaOrder = require("./ShawarmaOrder");
-const e = require('express');
 const { exception } = require('console');
 
 // Create a new express application instance
@@ -24,25 +22,28 @@ let oSockets = {};
 let oOrders = {};
 app.post("/payment/:phone", (req, res) => {
   // this happens when the order is complete
-  sFrom = req.params.phone;
-  const aReply = oOrders[sFrom].handleInput(req.body);
-  const oSocket = oSockets[sFrom];
-  // send messages out of turn
-  for (let n = 0; n < aReply.length; n++) {
-    if (oSocket) {
-      const data = {
-        message: aReply[n]
-      };
-      oSocket.emit('receive message', data);
-    } else {
-      throw new Exception("twilio code would go here");
+    let sFrom = req.params.phone;
+    let msg = req.body.purchase_units[0].shipping.address.address_line_1+" "+req.body.purchase_units[0].shipping.address.admin_area_1+" "+req.body.purchase_units[0].shipping.address.admin_area_2
+    +" "+req.body.purchase_units[0].shipping.address.country_code;
+    console.log(msg);
+    const aReply = oOrders[sFrom].handleInput(msg);
+    const oSocket = oSockets[sFrom];
+    // send messages out of turn
+    for (let n = 0; n < aReply.length; n++) {
+      if (oSocket) {
+        const data = {
+          message: aReply[n]
+        };
+        oSocket.emit('receive message', data);
+      } else {
+        throw("Error Happened");
+      }
     }
-  }
-  if (oOrders[sFrom].isDone()) {
-    delete oOrders[sFrom];
-    delete oSockets[sFrom];
-  }
-  res.end("ok");
+    if (oOrders[sFrom].isDone()) {
+      delete oOrders[sFrom];
+      delete oSockets[sFrom];
+    }
+    res.end("ok");
 });
 
 app.get("/payment/:phone", (req, res) => {
